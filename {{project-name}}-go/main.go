@@ -20,6 +20,7 @@ import (
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/ringbuf"
+	"github.com/cilium/ebpf/rlimit"
 
 	_ "embed"
 )
@@ -60,6 +61,9 @@ func extractPrintableStrings(raw []byte) []string {
 }
 
 func main() {
+	if err := rlimit.RemoveMemlock(); err != nil {
+		panic(err)
+	}
 	spec, err := ebpf.LoadCollectionSpecFromReader(bytes.NewReader(ebpfBytes))
 	if err != nil {
 		log.Fatalf("LoadCollectionSpec failed: %v", err)
@@ -132,6 +136,7 @@ func main() {
 
 	go func() {
 		fmt.Println("Listening to Aya logs...")
+		fmt.Println("Waiting for Ctrl-C.")
 		for {
 			select {
 			case <-ctx.Done():
