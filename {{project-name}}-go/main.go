@@ -132,6 +132,7 @@ func main() {
 
 	go func() {
 		fmt.Println("Listening to Aya logs...")
+		fmt.Println("Waiting for Ctrl-C.")
 		for {
 			select {
 			case <-ctx.Done():
