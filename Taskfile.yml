@@ -9,7 +9,7 @@ tasks:
   install-ebpf:
     desc: "Install the eBPF program"
     cmds:
-      - go run main.go {{ "{{ .HOOK }}" }}
+      - sudo go run main.go {{ "{{ .HOOK }}" }}
     dir: {{project-name}}-go
     deps:
       - build-ebpf

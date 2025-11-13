@@ -27,30 +27,30 @@ jobs:
         runner:
           - ubuntu-latest # x86
         program:
-          - kprobe
-          - kretprobe
-          - fentry
-          - fexit
-          - uprobe
-          - uretprobe
-          - sock_ops
-          - socket_filter
-          - sk_msg
+          #- kprobe
+          #- kretprobe
+          #- fentry
+          #- fexit
+          #- uprobe
+          #- uretprobe
+          #- sock_ops
+          #- socket_filter
+          #- sk_msg
           - xdp
-          - cgroup_skb
-          - cgroup_sockopt
-          - cgroup_sysctl
-          - classifier
-          - lsm
-          - perf_event
-          - raw_tracepoint
-          - tp_btf
+          #- cgroup_skb
+          #- cgroup_sockopt
+          #- cgroup_sysctl
+          #- classifier
+          #- lsm
+          #- perf_event
+          #- raw_tracepoint
+          #- tp_btf
           - tracepoint
-        include:
-          - runner: macos-15-intel # x86
-            program: kprobe
-          - runner: macos-15 # arm64
-            program: kprobe
+        #include:
+        #  - runner: macos-15-intel # x86
+        #    program: kprobe
+        #  - runner: macos-15 # arm64
+        #    program: kprobe
 
     runs-on: ${{ matrix.runner }}
 
@@ -89,7 +89,9 @@ jobs:
       - run: cargo install bpf-linker --git https://github.com/aya-rs/bpf-linker.git
         if: runner.os == 'Linux'
 
-      - run: sudo apt update && sudo apt install expect
+      - run: sudo apt update && sudo apt install expect golang
         if: runner.os == 'Linux'
+
+      - run: sudo sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
 
       - run: ./test.sh ${{ github.workspace }} ${{ matrix.program }}

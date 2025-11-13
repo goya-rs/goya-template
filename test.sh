@@ -99,10 +99,11 @@ case $OS in
   # `+nightly` because "the option `Z` is only accepted on the nightly compiler".
   cargo +nightly clippy --exclude "${CRATE_NAME}-ebpf" --all-targets --workspace -- --deny warnings
   cargo +nightly clippy --package "${CRATE_NAME}-ebpf" --all-targets -- --deny warnings -C panic=abort -Zpanic_abort_tests
+  cargo run
 
   expect <<EOF
     set timeout 30        ;# Increase timeout if necessary
-    spawn cargo run --release
+    spawn task
     expect {
       -re "Waiting for Ctrl-C.*" {
         send -- \003      ;# Send Ctrl-C
