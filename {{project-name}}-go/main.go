@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -16,6 +17,7 @@ import (
 	"strings"
 {% endif %}
 	"syscall"
+	"sync"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
@@ -145,24 +147,41 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	go func() {
-		fmt.Println("Listening to Aya logs...")
-		fmt.Println("Waiting for Ctrl-C.")
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				record, err := reader.Read()
-				if err != nil {
-					continue
-				}
-				msg := extractPrintableStrings(record.RawSample)
-				fmt.Printf("[INFO  %s] %s\n", msg[1], msg[len(msg)-1])
+	    defer wg.Done()
+	    fmt.Println("Listening to Aya logs...")
+	    fmt.Println("Waiting for Ctrl-C.")
+
+	    for {
+		select {
+		case <-ctx.Done():
+		    fmt.Println("Log reader stopping...")
+		    return
+		default:
+		    record, err := reader.Read()
+		    if err != nil {
+			if errors.Is(err, ringbuf.ErrClosed) {
+			    return
 			}
+			continue
+		    }
+
+		    msg := extractPrintableStrings(record.RawSample)
+		    fmt.Printf("[INFO  %s] %s\n", msg[1], msg[len(msg)-1])
 		}
+	    }
 	}()
 
+	// Wait for Ctrl-C
 	<-ctx.Done()
+
 	fmt.Println("Shutting down...")
+
+	reader.Close()
+	wg.Wait()
+
+	fmt.Println("Bye!")
 }
