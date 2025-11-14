@@ -33,6 +33,8 @@ const defaultCategory = "{{tracepoint_category}}"
 const defaultName = "{{tracepoint_name}}"
 {%- when "xdp" %}
 const defaultIface = "{{default_iface}}"
+{%- when "kprobe" %}
+const defaultFunction = "{{kprobe}}"
 {%- endcase %}
 
 //go:embed .ebpf/{{project-name}}
@@ -95,11 +97,10 @@ func main() {
             category, name = parts[0], parts[1]
         }
 
-	tp, err := link.Tracepoint(category, name, prog, nil)
+	l, err := link.Tracepoint(category, name, prog, nil)
 	if err != nil {
 		log.Fatalf("opening tracepoint: %s", err)
 	}
-	defer tp.Close()
         {%- when "xdp" %}
 	attachment := defaultIface
 	if len(os.Args) > 1 {
@@ -116,8 +117,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("AttachXDP failed: %v", err)
 	}
-	defer l.Close()
+        {%- when "kprobe" %}
+	attachment := defaultFunction
+	if len(os.Args) > 1 {
+		attachment = os.Args[1]
+	}
+
+	l, err := link.Kprobe(attachment, prog, nil)
+	if err != nil {
+		log.Fatalf("opening kprobe: %s", err)
+	}
     {%- endcase %}
+	defer l.Close()
 	fmt.Printf("✅ Program '%s' attached to %s\n", progName, attachment)
 
 	logMap, ok := coll.Maps["AYA_LOGS"]
