@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -16,6 +17,7 @@ import (
 	"strings"
 {% endif %}
 	"syscall"
+	"sync"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
@@ -161,7 +163,6 @@ func main() {
 		default:
 		    record, err := reader.Read()
 		    if err != nil {
-			// nettoyage : quand reader est fermé, on sort proprement
 			if errors.Is(err, ringbuf.ErrClosed) {
 			    return
 			}
