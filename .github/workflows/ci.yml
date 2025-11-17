@@ -40,7 +40,7 @@ jobs:
           #- cgroup_skb
           #- cgroup_sockopt
           #- cgroup_sysctl
-          #- classifier
+          - classifier
           #- lsm
           #- perf_event
           #- raw_tracepoint

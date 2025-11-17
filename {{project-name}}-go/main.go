@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"log"
 
-{% if program_type == "xdp" %}
+{% assign types = "xdp,classifier" %}
+{% if types contains program_type %}
 	"net"
 {% endif %}
 
@@ -33,7 +34,7 @@ const progName = "{{crate_name}}"
 {%- when "tracepoint" %}
 const defaultCategory = "{{tracepoint_category}}"
 const defaultName = "{{tracepoint_name}}"
-{%- when "xdp" %}
+{%- when "xdp", "classifier" %}
 const defaultIface = "{{default_iface}}"
 {%- when "kprobe" %}
 const defaultFunction = "{{kprobe}}"
@@ -118,6 +119,23 @@ func main() {
 	})
 	if err != nil {
 		log.Fatalf("AttachXDP failed: %v", err)
+	}
+        {%- when "classifier" %}
+	attachment := defaultIface
+	if len(os.Args) > 1 {
+		attachment = os.Args[1]
+	}
+	iface, err := net.InterfaceByName(attachment)
+	if err != nil {
+		log.Fatalf("Interface not found: %v", err)
+	}
+	l, err := link.AttachTCX(link.TCXOptions{
+		Interface: iface.Index,
+		Program:   prog,
+		Attach:    ebpf.AttachTCX{{direction}},
+	})
+	if err != nil {
+		log.Fatalf("AttachTCX failed: %v", err)
 	}
         {%- when "kprobe" %}
 	attachment := defaultFunction
