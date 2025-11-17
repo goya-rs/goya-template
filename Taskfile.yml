@@ -17,7 +17,7 @@ tasks:
   fmt:
     desc: "format go code"
     cmds:
-      - go fmt main.go
+      - sudo go fmt main.go
     dir: {{project-name}}-go
 
   default:

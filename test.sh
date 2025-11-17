@@ -49,7 +49,7 @@ case ${PROG_TYPE} in
   ADDITIONAL_ARGS=(-d tracepoint_category=net -d tracepoint_name=net_dev_queue)
   ;;
 "uprobe" | "uretprobe")
-  ADDITIONAL_ARGS=(-d uprobe_target=/proc/self/exe -d uprobe_fn_name=main)
+  ADDITIONAL_ARGS=(-d uprobe_target=/bin/bash -d uprobe_fn_name=readline)
   ;;
 *)
   ADDITIONAL_ARGS=()
