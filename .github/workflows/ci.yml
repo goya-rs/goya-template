@@ -31,8 +31,8 @@ jobs:
           #- kretprobe
           #- fentry
           #- fexit
-          #- uprobe
-          #- uretprobe
+          - uprobe
+          - uretprobe
           #- sock_ops
           #- socket_filter
           #- sk_msg

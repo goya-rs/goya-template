@@ -14,7 +14,8 @@ import (
 
 	"os"
 	"os/signal"
-{% if program_type == "tracepoint" %}
+{% assign types_double = "tracepoint,uprobe,uretprobe" %}
+{% if types_double contains program_type %}
 	"strings"
 {% endif %}
 	"syscall"
@@ -38,6 +39,9 @@ const defaultName = "{{tracepoint_name}}"
 const defaultIface = "{{default_iface}}"
 {%- when "kprobe" %}
 const defaultFunction = "{{kprobe}}"
+{%- when "uprobe", "uretprobe" %}
+const defaultBinary = "{{uprobe_target}}"
+const defaultFunction = "{{uprobe_fn_name}}"
 {%- endcase %}
 
 //go:embed .ebpf/{{project-name}}
@@ -65,6 +69,39 @@ func extractPrintableStrings(raw []byte) []string {
 	return result
 }
 
+{%- case program_type -%}
+{%- when "uprobe", "uretprobe" %}
+func getAttachment(defaultBinary, defaultFunction string) (string, string, string, error) {
+	binary := defaultBinary
+	function := defaultFunction
+	attachment := fmt.Sprintf("%s:%s", binary, function)
+	if len(os.Args) > 1 {
+		attachment = os.Args[1]
+		parts := strings.SplitN(attachment, ":", 2)
+		if len(parts) != 2 {
+			return "", "", "", fmt.Errorf("invalid attachment format: %s, expected binary:function", attachment)
+		}
+		binary, function = parts[0], parts[1]
+	}
+	return binary, function, attachment, nil
+}
+
+
+func attachUprobe(prog *ebpf.Program, isReturn bool, binary, function string) (link.Link, error) {
+	// Open binary
+	ex, err := link.OpenExecutable(binary)
+	if err != nil {
+		return nil, fmt.Errorf("opening executable: %w", err)
+	}
+
+	// Attach according to type
+	if isReturn {
+		return ex.Uretprobe(function, prog, nil)
+	}
+	return ex.Uprobe(function, prog, nil)
+}
+{%- endcase %}
+
 func main() {
 	if err := rlimit.RemoveMemlock(); err != nil {
 		panic(err)
@@ -84,6 +121,14 @@ func main() {
 	if prog == nil {
 		log.Fatalf("Program %s not found", progName)
 	}
+
+    {%- case program_type -%}
+	{%- when "uprobe", "uretprobe" %}
+	binary, function, attachment, err := getAttachment(defaultBinary, defaultFunction)
+	if err != nil {
+		log.Fatalf("creating attachment: %s", err)
+	}
+    {%- endcase %}
 
     {%- case program_type -%}
         {%- when "tracepoint" %}
@@ -146,6 +191,16 @@ func main() {
 	l, err := link.Kprobe(attachment, prog, nil)
 	if err != nil {
 		log.Fatalf("opening kprobe: %s", err)
+	}
+	{%- when "uretprobe" %}
+	l, err := attachUprobe(prog, true, binary, function)
+	if err != nil {
+		log.Fatalf("creating uretprobe: %s", err)
+	}
+	{%- when "uprobe" %}
+	l, err := attachUprobe(prog, false, binary, function)
+	if err != nil {
+		log.Fatalf("creating uprobe: %s", err)
 	}
     {%- endcase %}
 	defer l.Close()
