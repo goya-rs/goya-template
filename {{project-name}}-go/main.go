@@ -35,6 +35,7 @@ const progName = "{{crate_name}}"
 {%- when "tracepoint" %}
 const defaultCategory = "{{tracepoint_category}}"
 const defaultName = "{{tracepoint_name}}"
+const expected = "category:name"
 {%- when "xdp", "classifier" %}
 const defaultIface = "{{default_iface}}"
 {%- when "kprobe" %}
@@ -42,7 +43,15 @@ const defaultFunction = "{{kprobe}}"
 {%- when "uprobe", "uretprobe" %}
 const defaultBinary = "{{uprobe_target}}"
 const defaultFunction = "{{uprobe_fn_name}}"
+const expected = "binary:function"
 {%- endcase %}
+
+{%- if program_type == "uprobe" %}
+const ret = false
+{% endif %}
+{%- if program_type == "uretprobe" %}
+const ret = true
+{% endif %}
 
 //go:embed .ebpf/{{project-name}}
 var ebpfBytes []byte
@@ -70,23 +79,26 @@ func extractPrintableStrings(raw []byte) []string {
 }
 
 {%- case program_type -%}
-{%- when "uprobe", "uretprobe" %}
-func getAttachment(defaultBinary, defaultFunction string) (string, string, string, error) {
-	binary := defaultBinary
-	function := defaultFunction
-	attachment := fmt.Sprintf("%s:%s", binary, function)
+{%- when "uprobe", "uretprobe", "tracepoint" %}
+func getAttachment(defaultValue1, defaultValue2 string) (string, string, string, error) {
+	value1 := defaultValue1
+	value2 := defaultValue2
+	attachment := fmt.Sprintf("%s:%s", value1, value2)
 	if len(os.Args) > 1 {
 		attachment = os.Args[1]
 		parts := strings.SplitN(attachment, ":", 2)
 		if len(parts) != 2 {
-			return "", "", "", fmt.Errorf("invalid attachment format: %s, expected binary:function", attachment)
+			return "", "", "", fmt.Errorf("invalid attachment format: %s, expected %s", attachment, expected)
 		}
-		binary, function = parts[0], parts[1]
+		value1, value2 = parts[0], parts[1]
 	}
-	return binary, function, attachment, nil
+	return value1, value2, attachment, nil
 }
+{%- endcase %}
 
 
+{%- case program_type -%}
+{%- when "uprobe", "uretprobe" %}
 func attachUprobe(prog *ebpf.Program, isReturn bool, binary, function string) (link.Link, error) {
 	// Open binary
 	ex, err := link.OpenExecutable(binary)
@@ -132,18 +144,7 @@ func main() {
 
     {%- case program_type -%}
         {%- when "tracepoint" %}
-        category := defaultCategory
-        name := defaultName
-	attachment := fmt.Sprintf("%s:%s", category, name)
-
-        if len(os.Args) > 1 {
-            attachment = os.Args[1]
-            parts := strings.SplitN(attachment, ":", 2)
-            if len(parts) != 2 {
-                log.Fatalf("invalid attachment format: %s, expected category:name", attachment)
-            }
-            category, name = parts[0], parts[1]
-        }
+	category, name, attachment, err := getAttachment(defaultCategory, defaultName)
 
 	l, err := link.Tracepoint(category, name, prog, nil)
 	if err != nil {
@@ -192,15 +193,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("opening kprobe: %s", err)
 	}
-	{%- when "uretprobe" %}
-	l, err := attachUprobe(prog, true, binary, function)
+	{%- when "uprobe", "uretprobe" %}
+	l, err := attachUprobe(prog, ret, binary, function)
 	if err != nil {
-		log.Fatalf("creating uretprobe: %s", err)
-	}
-	{%- when "uprobe" %}
-	l, err := attachUprobe(prog, false, binary, function)
-	if err != nil {
-		log.Fatalf("creating uprobe: %s", err)
+		log.Fatalf("creating u(ret)probe: %s", err)
 	}
     {%- endcase %}
 	defer l.Close()
