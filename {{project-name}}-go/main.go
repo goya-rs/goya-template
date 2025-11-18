@@ -38,7 +38,7 @@ const defaultName = "{{tracepoint_name}}"
 const expected = "category:name"
 {%- when "xdp", "classifier" %}
 const defaultIface = "{{default_iface}}"
-{%- when "kprobe" %}
+{%- when "kprobe", "kretprobe" %}
 const defaultFunction = "{{kprobe}}"
 {%- when "uprobe", "uretprobe" %}
 const defaultBinary = "{{uprobe_target}}"
@@ -46,10 +46,10 @@ const defaultFunction = "{{uprobe_fn_name}}"
 const expected = "binary:function"
 {%- endcase %}
 
-{%- if program_type == "uprobe" %}
+{%- if program_type == "uprobe" or program_type == "kprobe" %}
 const ret = false
 {% endif %}
-{%- if program_type == "uretprobe" %}
+{%- if program_type == "uretprobe" or program_type == "kretprobe" %}
 const ret = true
 {% endif %}
 
@@ -183,15 +183,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("AttachTCX failed: %v", err)
 	}
-        {%- when "kprobe" %}
+        {%- when "kprobe", "kretprobe" %}
 	attachment := defaultFunction
 	if len(os.Args) > 1 {
 		attachment = os.Args[1]
 	}
 
-	l, err := link.Kprobe(attachment, prog, nil)
+	var l link.Link
+
+	if ret {
+		l, err = link.Kretprobe(attachment, prog, nil)
+	} else {
+		l, err = link.Kprobe(attachment, prog, nil)
+	}
 	if err != nil {
-		log.Fatalf("opening kprobe: %s", err)
+		log.Fatalf("opening k(ret)probe: %s", err)
 	}
 	{%- when "uprobe", "uretprobe" %}
 	l, err := attachUprobe(prog, ret, binary, function)

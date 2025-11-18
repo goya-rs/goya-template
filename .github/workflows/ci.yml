@@ -28,7 +28,7 @@ jobs:
           - ubuntu-latest # x86
         program:
           - kprobe
-          #- kretprobe
+          - kretprobe
           #- fentry
           #- fexit
           - uprobe
