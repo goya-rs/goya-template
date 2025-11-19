@@ -6,24 +6,9 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-{{project-name}}-common = { path = "../{{project-name}}-common", features = ["user"] }
-
 anyhow = { workspace = true, default-features = true }
-aya = { workspace = true }
-aya-log = { workspace = true }
-env_logger = { workspace = true }
 libc = { workspace = true }
 log = { workspace = true }
-tokio = { workspace = true, features = [
-    "macros",
-    "rt",
-    "rt-multi-thread",
-    "net",
-    "signal",
-] }
-{% if program_types_with_opts contains program_type -%}
-clap = { workspace = true, features = ["derive"] }
-{% endif -%}
 
 [build-dependencies]
 anyhow = { workspace = true }
@@ -42,6 +27,7 @@ cargo_metadata = { workspace = true }
 # workflows with stable cargo; stable cargo outright refuses to load manifests that use unstable
 # features.
 {{project-name}}-ebpf = { path = "../{{project-name}}-ebpf" }
+
 
 [[bin]]
 name = "{{project-name}}"
