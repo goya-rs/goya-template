@@ -1,4 +1,4 @@
-package main
+package logs
 
 import (
 	"context"
@@ -37,7 +37,7 @@ func extractPrintableStrings(raw []byte) []string {
 	return result
 }
 
-func logs(coll *ebpf.Collection, progName string) {
+func Logs(coll *ebpf.Collection, progName string) {
 	logMap, ok := coll.Maps["AYA_LOGS"]
 	if !ok {
 		log.Fatal("AYA_LOGS map not found")
