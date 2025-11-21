@@ -1,4 +1,4 @@
-module gaya.com/m
+module github.com/goya-rs/{{project-name}}
 
 go 1.24.4
 

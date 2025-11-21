@@ -8,6 +8,9 @@ import (
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/rlimit"
 
+	"github.com/goya-rs/{{project-name}}/attach"
+	"github.com/goya-rs/{{project-name}}/logs"
+
 	_ "embed"
 )
 
@@ -27,7 +30,7 @@ const defaultFunction = "{{uprobe_fn_name}}"
 {%- endcase %}
 
 {%- if program_type == "classifier" %}
-const direction = {{direction}}
+const direction = attach.{{direction}}
 {% endif %}
 
 {%- if program_type == "uprobe" or program_type == "kprobe" %}
@@ -62,7 +65,7 @@ func main() {
 
     {%- case program_type -%}
         {%- when "tracepoint" %}
-        spec := AttachmentSpec{
+        spec := attach.AttachmentSpec{
 		Type: "{{program_type}}",
 		Hook1: defaultCategory,
 		Hook2: defaultName,
@@ -73,7 +76,7 @@ func main() {
 	}
 	l, err := spec.AttachTracepoint(prog)
         {%- when "xdp" %}
-        spec := AttachmentSpec{
+        spec := attach.AttachmentSpec{
 		Type: "{{program_type}}",
 		Hook1: defaultIface,
 	}
@@ -83,7 +86,7 @@ func main() {
 	}
 	l, err := spec.AttachXDP(prog)
         {%- when "classifier" %}
-        spec := AttachmentSpec{
+        spec := attach.AttachmentSpec{
 		Type: "{{program_type}}",
 		Hook1: defaultIface,
 		Direction: direction,
@@ -94,7 +97,7 @@ func main() {
 	}
 	l, err := spec.AttachTC(prog)
         {%- when "kprobe", "kretprobe" %}
-        spec := AttachmentSpec{
+        spec := attach.AttachmentSpec{
 		Type: "{{program_type}}",
 		Hook1: defaultFunction,
 		Ret: ret,
@@ -105,7 +108,7 @@ func main() {
 	}
 	l, err := spec.AttachKprobe(prog)
 	{%- when "uprobe", "uretprobe" %}
-        spec := AttachmentSpec{
+        spec := attach.AttachmentSpec{
 		Type: "{{program_type}}",
 		Hook1: defaultBinary,
 		Hook2: defaultFunction,
@@ -124,5 +127,5 @@ func main() {
 	defer l.Close()
 	fmt.Printf("✅ Program '%s' attached to %s\n", progName, attachment)
 
-	logs(coll, progName)
+	logs.Logs(coll, progName)
 }
