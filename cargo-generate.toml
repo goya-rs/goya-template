@@ -14,7 +14,7 @@ choices = [
 #  "fexit",
   "kprobe",
   "kretprobe",
-#  "lsm",
+  "lsm",
 #  "perf_event",
 #  "raw_tracepoint",
 #  "sk_msg",

@@ -14,7 +14,13 @@ import (
 	_ "embed"
 )
 
-const progName = "{{crate_name}}"
+const crateName = "{{crate_name}}"
+
+{%- if program_type != "lsm" %}
+const progName = crateName
+{%- else %}
+const progName = "{{lsm_hook}}"
+{% endif %}
 
 {%- case program_type -%}
 {%- when "tracepoint" %}
@@ -119,13 +125,23 @@ func main() {
 		log.Fatalf("retrieving attachment: %s", err)
 	}
 	l, err := spec.AttachUprobe(prog)
+	{%- when "lsm" %}
+        spec := attach.AttachmentSpec{
+		Type: "{{program_type}}",
+		Hook1: "{{lsm_hook}}",
+	}
+        spec, err = spec.ResolveAttachment()
+	if err != nil {
+		log.Fatalf("retrieving attachment: %s", err)
+	}
+	l, err := spec.AttachLSM(prog)
     {%- endcase %}
 	attachment := spec.String()
 	if err != nil {
 		log.Fatalf("opening {{program_type}}: %s", err)
 	}
 	defer l.Close()
-	fmt.Printf("✅ Program '%s' attached to %s\n", progName, attachment)
+	fmt.Printf("✅ Program '%s' attached to %s\n", crateName, attachment)
 
-	logs.Logs(coll, progName)
+	logs.Logs(coll, crateName)
 }
