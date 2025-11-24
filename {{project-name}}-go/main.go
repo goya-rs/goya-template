@@ -63,63 +63,10 @@ func main() {
 		log.Fatalf("Program %s not found", progName)
 	}
 
-    {%- case program_type -%}
-        {%- when "tracepoint" %}
-        spec := attach.AttachmentSpec{
-		Type: "{{program_type}}",
-		Hook1: defaultCategory,
-		Hook2: defaultName,
-	}
-        spec, err = spec.ResolveAttachment()
-	if err != nil {
-		log.Fatalf("retrieving attachment: %s", err)
-	}
-	l, err := spec.AttachTracepoint(prog)
-        {%- when "xdp" %}
-        spec := attach.AttachmentSpec{
-		Type: "{{program_type}}",
-		Hook1: defaultIface,
-	}
-        spec, err = spec.ResolveAttachment()
-	if err != nil {
-		log.Fatalf("retrieving attachment: %s", err)
-	}
-	l, err := spec.AttachXDP(prog)
-        {%- when "classifier" %}
-        spec := attach.AttachmentSpec{
-		Type: "{{program_type}}",
-		Hook1: defaultIface,
-		Direction: direction,
-	}
-        spec, err = spec.ResolveAttachment()
-	if err != nil {
-		log.Fatalf("retrieving attachment: %s", err)
-	}
-	l, err := spec.AttachTC(prog)
-        {%- when "kprobe", "kretprobe" %}
-        spec := attach.AttachmentSpec{
-		Type: "{{program_type}}",
-		Hook1: defaultFunction,
-		Ret: ret,
-	}
-        spec, err = spec.ResolveAttachment()
-	if err != nil {
-		log.Fatalf("retrieving attachment: %s", err)
-	}
-	l, err := spec.AttachKprobe(prog)
-	{%- when "uprobe", "uretprobe" %}
-        spec := attach.AttachmentSpec{
-		Type: "{{program_type}}",
-		Hook1: defaultBinary,
-		Hook2: defaultFunction,
-		Ret: ret,
-	}
-        spec, err = spec.ResolveAttachment()
-	if err != nil {
-		log.Fatalf("retrieving attachment: %s", err)
-	}
-	l, err := spec.AttachUprobe(prog)
-    {%- endcase %}
+        l, err := link.AttachLSM(link.LSMOptions{
+            Program: prog,
+        })
+
 	attachment := spec.String()
 	if err != nil {
 		log.Fatalf("opening {{program_type}}: %s", err)
