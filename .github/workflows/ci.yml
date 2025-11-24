@@ -41,7 +41,7 @@ jobs:
           #- cgroup_sockopt
           #- cgroup_sysctl
           - classifier
-          #- lsm
+          - lsm
           #- perf_event
           #- raw_tracepoint
           #- tp_btf
