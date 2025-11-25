@@ -29,6 +29,12 @@ func (spec AttachmentSpec) AttachTracepoint(prog *ebpf.Program) (link.Link, erro
 	return link.Tracepoint(spec.Hook1, spec.Hook2, prog, nil)
 }
 
+func (spec AttachmentSpec) AttachBTFTracepoint(prog *ebpf.Program) (link.Link, error) {
+	return link.AttachTracing(link.TracingOptions{
+		Program: prog,
+	})
+}
+
 func (spec AttachmentSpec) AttachLSM(prog *ebpf.Program) (link.Link, error) {
 	return link.AttachLSM(link.LSMOptions{Program: prog})
 }

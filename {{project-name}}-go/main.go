@@ -16,15 +16,20 @@ import (
 
 const crateName = "{{crate_name}}"
 
-{%- if program_type != "lsm" %}
-const progName = crateName
-{%- else %}
+{% case program_type %}
+  {% when "lsm" %}
 const progName = "{{lsm_hook}}"
-{% endif %}
+  {% when "tp_btf" %}
+const progName = "{{tracepoint_name}}"
+  {% else %}
+const progName = crateName
+{% endcase %}
 
 {%- case program_type -%}
 {%- when "tracepoint" %}
 const defaultCategory = "{{tracepoint_category}}"
+const defaultName = "{{tracepoint_name}}"
+{%- when "tp_btf" %}
 const defaultName = "{{tracepoint_name}}"
 {%- when "xdp", "classifier" %}
 const defaultIface = "{{default_iface}}"
@@ -81,6 +86,16 @@ func main() {
 		log.Fatalf("retrieving attachment: %s", err)
 	}
 	l, err := spec.AttachTracepoint(prog)
+        {%- when "tp_btf" %}
+        spec := attach.AttachmentSpec{
+		Type: "{{program_type}}",
+		Hook1: defaultName,
+	}
+        spec, err = spec.ResolveAttachment()
+	if err != nil {
+		log.Fatalf("retrieving attachment: %s", err)
+	}
+	l, err := spec.AttachBTFTracepoint(prog)
         {%- when "xdp" %}
         spec := attach.AttachmentSpec{
 		Type: "{{program_type}}",
