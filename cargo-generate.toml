@@ -20,7 +20,7 @@ choices = [
 #  "sk_msg",
 #  "sock_ops",
 #  "socket_filter",
-#  "tp_btf",
+  "tp_btf",
   "tracepoint",
   "uprobe",
   "uretprobe",
