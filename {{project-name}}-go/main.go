@@ -8,8 +8,8 @@ import (
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/rlimit"
 
-	"github.com/goya-rs/{{project-name}}/attach"
-	"github.com/goya-rs/{{project-name}}/logs"
+	"github.com/goya-rs/goya/attach"
+	"github.com/goya-rs/goya/ayalog"
 
 	_ "embed"
 )
@@ -158,5 +158,5 @@ func main() {
 	defer l.Close()
 	fmt.Printf("✅ Program '%s' attached to %s\n", crateName, attachment)
 
-	logs.Logs(coll, crateName)
+	ayalog.Logs(coll, crateName)
 }
