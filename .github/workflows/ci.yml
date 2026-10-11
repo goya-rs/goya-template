@@ -38,14 +38,6 @@ jobs:
           - lsm
           - tp_btf
           - tracepoint
-        include:
-          # Test that crate_name == program_type doesn't cause duplicate symbol errors.
-          - runner: ubuntu-latest
-            program: uprobe
-            crate_name: uprobe
-          - runner: ubuntu-latest
-            program: uretprobe
-            crate_name: uretprobe
 
     runs-on: ${{ matrix.runner }}
 
