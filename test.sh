@@ -12,7 +12,7 @@ if [ -z "${PROG_TYPE}" ]; then
   echo "program type required"
   exit 1
 fi
-CRATE_NAME=aya-test-crate
+CRATE_NAME=${CRATE_NAME:-aya-test-crate}
 
 case ${PROG_TYPE} in
 "cgroup_sockopt")
@@ -83,10 +83,8 @@ case $OS in
   cargo +nightly fmt --all -- --check
   cargo build --package "${CRATE_NAME}"
   cargo build --package "${CRATE_NAME}" --release
-  # We cannot run clippy over the whole workspace at once due to feature unification. Since both
-  # ${CRATE_NAME} and ${CRATE_NAME}-ebpf depend on ${CRATE_NAME}-common and ${CRATE_NAME} activates
-  # ${CRATE_NAME}-common's aya dependency, we end up trying to compile the panic handler twice: once
-  # from the bpf program, and again from std via aya.
+  # We cannot run clippy over the whole workspace at once due to feature unification
+  # (the -ebpf crate is #![no_std], the host crate is not).
   #
   # `-C panic=abort` because "unwinding panics are not supported without std";
   # integration-ebpf contains `#[no_std]` binaries.

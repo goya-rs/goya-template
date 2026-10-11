@@ -11,9 +11,9 @@ license = "MIT OR Apache-2.0"
 edition = "2024"
 
 [workspace.dependencies]
-aya-build = { git = "https://github.com/aya-rs/aya", default-features = false }
-aya-ebpf = { git = "https://github.com/aya-rs/aya", default-features = false }
-aya-log-ebpf = { git = "https://github.com/aya-rs/aya", default-features = false }
+aya-build = { version = "0.2.0", default-features = false }
+aya-ebpf = { version = "0.2.1", default-features = false }
+aya-log-ebpf = { version = "0.2.0", default-features = false }
 
 anyhow = { version = "1", default-features = false }
 cargo_metadata = { version = "0.23.0", default-features = false }
@@ -24,3 +24,4 @@ which = { version = "6.0.0", default-features = false }
 [profile.release.package.{{project-name}}-ebpf]
 debug = 2
 codegen-units = 1
+strip = false
