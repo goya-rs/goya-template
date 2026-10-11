@@ -19,6 +19,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   build:
     strategy:
@@ -29,65 +31,43 @@ jobs:
         program:
           - kprobe
           - kretprobe
-          #- fentry
-          #- fexit
           - uprobe
           - uretprobe
-          #- sock_ops
-          #- socket_filter
-          #- sk_msg
           - xdp
-          #- cgroup_skb
-          #- cgroup_sockopt
-          #- cgroup_sysctl
           - classifier
           - lsm
-          #- perf_event
-          #- raw_tracepoint
           - tp_btf
           - tracepoint
-        #include:
-        #  - runner: macos-15-intel # x86
-        #    program: kprobe
-        #  - runner: macos-15 # arm64
-        #    program: kprobe
+        include:
+          # Test that crate_name == program_type doesn't cause duplicate symbol errors.
+          - runner: ubuntu-latest
+            program: uprobe
+            crate_name: uprobe
+          - runner: ubuntu-latest
+            program: uretprobe
+            crate_name: uretprobe
 
     runs-on: ${{ matrix.runner }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy,rust-src,rustfmt
 
       - uses: dtolnay/rust-toolchain@stable
-        if: runner.os == 'macOS' && runner.arch == 'X64'
-        with:
-          targets: x86_64-unknown-linux-musl
-
-      - uses: dtolnay/rust-toolchain@stable
-        if: runner.os == 'macOS' && runner.arch == 'ARM64'
-        with:
-          targets: aarch64-unknown-linux-musl
-
-      - uses: dtolnay/rust-toolchain@stable
         if: runner.os == 'Linux'
 
       - uses: Swatinem/rust-cache@v2
 
-      - uses: taiki-e/install-action@v2.85.5
+      - uses: taiki-e/install-action@v2.87.20
         with:
           tool: cargo-generate
 
-      - run: brew update && brew install filosottile/musl-cross/musl-cross llvm
-        if: runner.os == 'macos'
-
-      - run: cargo install bpf-linker --git https://github.com/aya-rs/bpf-linker.git --no-default-features --features llvm-21
-        if: runner.os == 'macos'
-
-      - run: cargo install bpf-linker --git https://github.com/aya-rs/bpf-linker.git
-        if: runner.os == 'Linux'
+      - uses: taiki-e/install-action@v2.87.20
+        with:
+          tool: bpf-linker
 
       - run: sudo apt update && sudo apt install expect golang
         if: runner.os == 'Linux'
@@ -95,3 +75,15 @@ jobs:
       - run: sudo sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
 
       - run: ./test.sh ${{ github.workspace }} ${{ matrix.program }}
+        env:
+          CRATE_NAME: ${{ matrix.crate_name }}
+
+  check:
+    if: always()
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
