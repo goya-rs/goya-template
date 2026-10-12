@@ -158,5 +158,7 @@ func main() {
 	defer l.Close()
 	fmt.Printf("✅ Program '%s' attached to %s\n", crateName, attachment)
 
-	ayalog.Logs(coll, crateName)
+	if err := ayalog.Logs(coll, crateName); err != nil {
+		log.Fatalf("aya log reader: %v", err)
+	}
 }
